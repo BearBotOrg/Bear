@@ -1,25 +1,24 @@
-# Aqua Internal README for 4.0 Alpha 1
+# Bear README Version 1.0
 
-**This file is confidential, do not share outisde of the organization without prior permission from an owner**
+We are still waiting on privileged intents from Discord
 
+**What is Bear?**
 
-**What is Aqua?**
-
-Aqua is a bot that has plenty of features including moderation, quizzes, money and plenty of fun commands. It is a must have bot.
+Bear is a bot that has plenty of features including moderation, economy, quizzes, money and plenty of fun commands. It is a must have bot.
 
 **Features**
 
-Autorole - Aqua can automatically assign a role when a new user joins
+Autorole - Bear can automatically assign a role when a new user joins
 
-Verification - Aqua also supports verification
+Verification - Bear also supports verification
 
-Quizzes - Aqua supports custom made quizzes
+Quizzes - Bear supports custom made quizzes
 
-Money - Aqua has a money system and an upcoming buy/sell shop system as well
+Money - Bear has a money system and an upcoming buy/sell shop system as well
 
 More coming soon!
 
-**[INTERNAL] Bot setup**
+**Bot setup**
 
 1) Edit config.py
 
