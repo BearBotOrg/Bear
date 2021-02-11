@@ -26,6 +26,4 @@ More coming soon!
 
 = 
 **Need Help**
-Join our support server at discord.gg/KMAweuv!
-
-[![Run on Repl.it](https://repl.it/badge/github/Water-Mod/WaterMod-SQL)](https://repl.it/github/Water-Mod/WaterMod-SQL)
+Join our support server at
