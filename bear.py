@@ -12,6 +12,7 @@ import requests
 import secrets
 import string
 from config import ConfigBase, ConfigIntents
+from config.ConfigBase import PG_USER as pg_user, PG_PWD as pg_pwd
 from bearlib.corelib import Libprefix, setup_db, Libcommand, Libsettings
 import uvicorn
 import jishaku
@@ -26,11 +27,10 @@ client = commands.AutoShardedBot(command_prefix = "$", intents = intents, max_me
 
 app = FastAPI()
 
-
 @app.on_event("startup")
 async def startup() -> None:
     global db, cache, lp, client
-    db = await libmeow_setup_db()
+    db = await setup_db(pg_user, pg_pwd)
     lp = Libprefix(db)
     cache = {} # Empty cache initially
     client.command_prefix = lp.bot_get_prefix

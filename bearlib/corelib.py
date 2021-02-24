@@ -4,7 +4,6 @@ from discord import Embed, Color, User
 from discord.ext import commands
 import string
 import secrets
-from config.ConfigBase import PG_USER as pg_user, PG_PWD as pg_pwd
 yellow = 0xFBFC7F
 
 class Libguildcache():
@@ -568,7 +567,7 @@ class Libeconomy():
         return user_portfolio[0][t]
 
 # Login to PostgreSQL
-async def setup_db():
+async def setup_db(pg_user, pg_pwd):
     db = asyncpg.create_pool(host = "127.0.0.1", port=5432, user=pg_user, password=pg_pwd, database="bear")
     return db
 
