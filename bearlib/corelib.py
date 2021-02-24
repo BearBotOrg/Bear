@@ -4,6 +4,7 @@ from discord import Embed, Color, User
 from discord.ext import commands
 import string
 import secrets
+from config.ConfigBase import PG_USER as pg_user, PG_PWD as pg_pwd
 yellow = 0xFBFC7F
 
 class Libguildcache():
@@ -567,29 +568,8 @@ class Libeconomy():
         return user_portfolio[0][t]
 
 # Login to PostgreSQL
-async def libmeow_setup_db():
-    db = await asyncpg.create_pool(
-        host="database-1.civhw5bah3rj.us-east-2.rds.amazonaws.com",
-		    #host="24.162.37.198",
-        user="postgres",
-        password="Waterbot123",
-        database="Aqua") #Login stuff
-    await db.execute("CREATE TABLE IF NOT EXISTS bot_portfolio (quiz_question TEXT NOT NULL, quiz_answer TEXT NOT NULL)")
-    await db.execute("CREATE INDEX IF NOT EXISTS bot_portfolio_index ON bot_portfolio (quiz_question, quiz_answer)")
-    await db.execute("CREATE TABLE IF NOT EXISTS user_portfolio (uid BIGINT NOT NULL, money FLOAT NOT NULL, points INTEGER NOT NULL, level INTEGER NOT NULL, state TEXT NOT NULL, item_list TEXT NOT NULL, epoch_hourly BIGINT NOT NULL, epoch_daily BIGINT NOT NULL, epoch_weekly BIGINT NOT NULL, mm_state BIGINT NOT NULL)")
-    await db.execute("CREATE INDEX IF NOT EXISTS user_portfolio_index ON user_portfolio (uid, state, level)") # Index for user portfolio
-    # Guild User Portfolio
-    await db.execute("CREATE TABLE IF NOT EXISTS user_guild_portfolio (gid BIGINT NOT NULL, uid BIGINT NOT NULL, user_guild_level INTEGER NOT NULL, msg_count BIGINT NOT NULL, warnings TEXT NOT NULL)")
-    await db.execute("CREATE INDEX IF NOT EXISTS user_guild_portfolio_index ON user_guild_portfolio (uid, gid, warnings)") # Index for user guild portfolio
-    await db.execute("CREATE TABLE IF NOT EXISTS user_modmail_portfolio (uid BIGINT NOT NULL, gid BIGINT NOT NULL, count BIGINT NOT NULL, mm_logs TEXT)")
-    # Guild Portfolio
-    await db.execute("CREATE INDEX IF NOT EXISTS user_portfolio_index ON user_modmail_portfolio (uid, gid)") # Index for user modmail portfolio
-    await db.execute("CREATE TABLE IF NOT EXISTS guild_portfolio (gid BIGINT NOT NULL, guild_level INTEGER NOT NULL, guild_money BIGINT NOT NULL, guild_points INTEGER NOT NULL, guild_perks TEXT NOT NULL, guild_economy_rate INTEGER NOT NULL, coronachannel BIGINT, lvlchannel BIGINT, welcomechannel BIGINT, autorole BIGINT, muterole BIGINT, purgeverify BIGINT, verifyrole BIGINT, welcomemsg TEXT, prefix TEXT, vanity TEXT, private INTEGER NOT NULL, mm_typeproxy INTEGER, mm_welcomemsg TEXT, mm_category BIGINT, modlog BIGINT, joinlog BIGINT, rolelog BIGINT, userlog BIGINT, captchaverify INTEGER, applychannel BIGINT)")
-    await db.execute("CREATE INDEX IF NOT EXISTS guild_portfolio_index ON guild_portfolio (gid, guild_perks, guild_level, prefix, captchaverify, mm_typeproxy)") # Index for user portfolio
-    await db.execute("CREATE TABLE IF NOT EXISTS guild_app_portfolio (gid BIGINT NOT NULL, qid TEXT NOT NULL, question TEXT, qcheck TEXT)")
-    await db.execute("CREATE INDEX IF NOT EXISTS guild_app_portfolio_index ON guild_app_portfolio (gid, qid)") # Index for user portfolio
-	# API Tokens
-    await db.execute("CREATE TABLE IF NOT EXISTS webtokens (uid TEXT NOT NULL, token TEXT, perms INTEGER)")
+async def setup_db():
+    db = asyncpg.create_pool(host = "127.0.0.1", port=5432, user=pg_user, password=pg_pwd, database="bear")
     return db
 
 # Change a setting (prefix) etc

@@ -1,6 +1,5 @@
 import asyncio
 import uvloop
-uvloop.install
 import discord
 import random
 from fastapi import FastAPI
@@ -12,8 +11,8 @@ import datetime
 import requests
 import secrets
 import string
-from config import Config
-from libmeow.libmeow import Libprefix, libmeow_setup_db, Libcommand, Libsettings
+from config import ConfigBase, ConfigIntents
+from bearlib.corelib import Libprefix, setup_db, Libcommand, Libsettings
 import uvicorn
 import jishaku
 
@@ -40,8 +39,8 @@ async def startup() -> None:
     client.remove_command('help')
     client.state_cache = {}
     client.state_cache_app = {}
-    client.config = Config
-    asyncio.create_task(client.start(Config.BOT_TOKEN))
+    client.config = ConfigBase
+    asyncio.create_task(client.start(client.config.BOT_TOKEN))
     for file in os.listdir("./cogs"):
         if file.endswith(".py") and not file.startswith("lib"):
             client.load_extension(f"cogs.{file[:-3]}")

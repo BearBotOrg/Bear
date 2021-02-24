@@ -1,1 +1,1 @@
-uvicorn bear:app --port 9997
+python3.9 -m uvicorn bear:app --port 9997
