@@ -236,26 +236,26 @@ class Libstaffapplication():
 
     async def list_questions(self):
         # Get all questions
-        ql = await self.client.db.fetch("SELECT gid, qid, question, qcheck FROM guild_app_portfolio WHERE gid = $1", self.guild.id)
+        ql = await self.client.db.fetch("SELECT gid, qid, question, qcheck FROM guild_app_table WHERE gid = $1", self.guild.id)
         return ql
 
     async def add_question(self, question, check):
-        port = Libportfolio(self.client)
-        await port.update_guild_app_portfolio("a", self.guild, question, check)
+        port = Libtable(self.client)
+        await port.update_guild_app_table("a", self.guild, question, check)
     async def remove_question(self, qid):
         # Note that remove question also removes duplicates
-        r = await self.client.db.fetch("SELECT qid FROM guild_app_portfolio WHERE gid = $1 AND qid = $2", self.guild.id, qid)
+        r = await self.client.db.fetch("SELECT qid FROM guild_app_table WHERE gid = $1 AND qid = $2", self.guild.id, qid)
         if not r:
             return "NO_QUESTIONS_IN_GUILD"
         # Get all questions
         ql = await self.list_questions()
         if(ql[0]["question"] == None):
             return "NO_QUESTIONS_IN_GUILD"
-        port = Libportfolio(self.client)
-        await port.update_guild_app_portfolio("r", self.guild, qid, None)
+        port = Libtable(self.client)
+        await port.update_guild_app_table("r", self.guild, qid, None)
     async def add_check(self, qid, check):
         # Note that remove question also removes duplicates
-        r = await self.client.db.fetch("SELECT qid FROM guild_app_portfolio WHERE gid = $1 AND qid = $2", self.guild.id, qid)
+        r = await self.client.db.fetch("SELECT qid FROM guild_app_table WHERE gid = $1 AND qid = $2", self.guild.id, qid)
         print(r)
         if not r:
             return "NO_QUESTIONS_IN_GUILD"
@@ -263,9 +263,9 @@ class Libstaffapplication():
         ql = await self.list_questions()
         if(ql[0]["question"] == None):
             return "NO_QUESTIONS_IN_GUILD"
-        await self.client.db.execute("UPDATE guild_app_portfolio SET qcheck = $1 WHERE gid = $2 AND qid = $3", check, self.guild.id, qid)    
+        await self.client.db.execute("UPDATE guild_app_table SET qcheck = $1 WHERE gid = $2 AND qid = $3", check, self.guild.id, qid)    
 class Libwarn():
-    ''' The format of a warn in a user_guild_portfolio is as follows:
+    ''' The format of a warn in a user_guild is as follows:
             - epoch|reason||next_epoch|next_reason
     '''
     def __init__(self, client, user, guild):
@@ -282,19 +282,19 @@ class Libwarn():
         print(t)
         if(reason.__contains__("|")):
             return "Reason for warn cannot contain |"
-        port = Libportfolio(self.client)
-        ugp = await port.get_user_guild_portfolio(self.user, self.guild)
+        port = Libtable(self.client)
+        ugp = await port.get_user_guild(self.user, self.guild)
         warnings = ugp[0]["warnings"] # Get old warnings
         if(warnings == ''):
             sep = ""
         else:
             sep = "||"
         warnings += sep + t + "|" + reason
-        await port.update_user_guild_portfolio(ugp, "warnings", warnings)
+        await port.update_user_guild(ugp, "warnings", warnings)
         return "Done"
     async def list_warns(self):
-        port = Libportfolio(self.client)
-        ugp = await port.get_user_guild_portfolio(self.user, self.guild)
+        port = Libtable(self.client)
+        ugp = await port.get_user_guild(self.user, self.guild)
         warnings = ugp[0]["warnings"] # Get warnings        
         warnings = warnings.split("||") # Split it by ||
         return warnings
@@ -325,10 +325,10 @@ class Libwarn():
         return Re, Rw
 
     async def clear_warn(self):
-        port = Libportfolio(self.client)
-        ugp = await port.get_user_guild_portfolio(self.user, self.guild)
+        port = Libtable(self.client)
+        ugp = await port.get_user_guild(self.user, self.guild)
         warnings = ""
-        await port.update_user_guild_portfolio(ugp, "warnings", warnings)
+        await port.update_user_guild(ugp, "warnings", warnings)
 
 class Libquiz():
     def __init__(self, client, message):
@@ -344,7 +344,7 @@ class Libquiz():
 
     # Function to just get all questions
     async def get_questions_all(self):
-        questions = await self.client.db.fetch("SELECT quiz_question, quiz_answer FROM bot_portfolio")
+        questions = await self.client.db.fetch("SELECT quiz_question, quiz_answer FROM bot_table")
         return questions
 
     async def random_question(self):
@@ -370,7 +370,7 @@ class Libquiz():
             await economy.remove_money(self.message.author, 10)
 
     async def add_quiz_question(self, question, answer):
-        await self.client.db.execute("INSERT INTO bot_portfolio (quiz_question, quiz_answer) VALUES ($1, $2)", question, answer)
+        await self.client.db.execute("INSERT INTO bot_table (quiz_question, quiz_answer) VALUES ($1, $2)", question, answer)
 
     async def add_qa_interactive(self, message, owners):
         if(str(message.author.id) not in owners):
@@ -383,109 +383,128 @@ class Libquiz():
         await self.add_quiz_question(question.content, answer.content)
         await message.channel.send("Added quiz question!")
 
-# Portfolio API
-class Libportfolio():
+# table API
+class Libtable():
     def __init__(self, client=None):
         ''' Client is mostly needed for most functions.'''
         self.client = client
 
-    async def create_user_modmail_portfolio(self, uid, gid):
-        await self.client.db.execute("INSERT INTO user_modmail_portfolio VALUES ($1, $2, 0)", uid, gid)
+    async def create_user_modmail_table(self, uid, gid):
+        await self.client.db.execute("INSERT INTO user_modmail_table VALUES ($1, $2, 0)", uid, gid)
 
-    # Function to create a portfolio for a user and add it to a database
-    async def create_user_portfolio(self, user):
-        await self.client.db.execute("INSERT INTO user_portfolio VALUES ($1, 0, 0, 1, 'DEFAULT', 'SUBMARINE_BASIC LOCKPICK USER_MANUAL', $2, $2, $2, 0)", user.id, time.time())
+    # Function to create a table for a user and add it to a database
+    async def create_users(self, user):
+        await self.client.db.execute("INSERT INTO users (uid) VALUES ($1)", user.id)
 
-    # Function to create a user guild portfolio of a user to a guild
-    async def create_user_guild_portfolio(self, user, guild):
-        await self.client.db.execute("INSERT INTO user_guild_portfolio VALUES ($1, $2, '0', '0', '')", guild.id, user.id)
+    # Function to create a user guild table of a user to a guild
+    async def create_user_guild(self, user, guild):
+        await self.client.db.execute("INSERT INTO user_guild (gid, uid) VALUES ($1, $2)", guild.id, user.id)
     
-    # Function to create a guild portfolio of a guild
-    async def create_guild_portfolio(self, guild):
-        portfolio = await self.client.db.fetch("SELECT gid FROM guild_portfolio WHERE gid = $1", guild.id)
-        if not portfolio:
+    # Function to create a guild table of a guild
+    async def create_guild_table(self, guild):
+        table = await self.client.db.fetchrow("SELECT gid FROM guild WHERE gid = $1", guild.id)
+        if not table:
             # Default Guild expontential rate is 4
-            await self.client.db.execute("INSERT INTO guild_portfolio (gid, guild_level, guild_money, guild_points, guild_perks, guild_economy_rate, private, mm_blocks) VALUES ($1, '1', '0', '0', 'BASIC VERIFIED', '4', 0, '')", guild.id)
+            await self.client.db.execute("INSERT INTO guild (gid) VALUES ($1)", guild.id)
+        return table
 
-    # Function to update guild app portfolio (set answer and check to None if deleting)
-    async def update_guild_app_portfolio(self, o, guild, question, check):
-        # In reality, question is qid in remove question
-        if o in ["a", "add"]:
-            #ql = await self.client.db.fetch("SELECT app_questions FROM guild_portfolio WHERE gid = $1", self.guild.id)
-            qid = ''.join((secrets.choice(string.ascii_letters + "0123456789") for i in range(64)))
-            await self.client.db.execute("INSERT INTO guild_app_portfolio VALUES ($1, $2, $3, $4)", guild.id, qid, question, check)
-        elif o in ["r", "remove"]:
-            await self.client.db.execute("DELETE FROM guild_app_portfolio WHERE gid = $1 AND qid = $2", guild.id, question)
+    # Function to create a guild cfg of a guild
+    async def create_guild_cfg(self, guild):
+        table = await self.client.db.fetchrow("SELECT gid FROM guild_config WHERE gid = $1", guild.id)
+        if not table:
+            # Default Guild expontential rate is 4
+            await self.client.db.execute("INSERT INTO guild_config (gid) VALUES ($1)", guild.id)
+        return table
 
-    # Function to update a user guild portfolio
-    async def update_user_guild_portfolio(self, user_guild_portfolio, setting, value):
-        await self.client.db.execute(f"UPDATE user_guild_portfolio SET {setting}= $1 WHERE gid = $2 AND uid = $3", value, user_guild_portfolio[0]["gid"],user_guild_portfolio[0]["uid"])
-    # Same thing for normal user portfolios
-    async def update_user_portfolio(self, user_portfolio, setting, value):
-        await self.client.db.execute(f"UPDATE user_portfolio SET {setting} = $1 WHERE uid = $2", value, user_portfolio[0]["uid"])
-    # Function get user portfolio
-    async def get_user_portfolio(self, user):
-        portfolio = await self.client.db.fetch("SELECT * FROM user_portfolio WHERE uid = $1", user.id)
-        if not portfolio:
-            await self.create_user_portfolio(user)
-            portfolio = await self.get_user_portfolio(user)
-        user_portfolio = portfolio
-        return user_portfolio
-
-    # Function to get user guild portfolio
-    async def get_user_guild_portfolio(self, user, guild):
-        portfolio = await self.client.db.fetch("SELECT * FROM user_guild_portfolio WHERE uid = $1 AND gid = $2", user.id, guild.id)
-        if not portfolio:
-            await self.create_user_guild_portfolio(user, guild)
-            portfolio = await self.get_user_guild_portfolio(user, guild)
-        user_guild_portfolio = portfolio
-        return user_guild_portfolio
-
-    # Function to get guild portfolio
-    async def get_guild_portfolio(self, guild):
-        portfolio = await self.client.db.fetch("SELECT * FROM guild_portfolio WHERE gid = $1", guild.id)
-        if not portfolio:
-            await self.create_guild_portfolio(guild)
-            portfolio = await self.get_guild_portfolio(guild)
+    # Function to get guild cfg
+    async def get_guild_cfg(self, guild):
+        table = await self.client.db.fetchrow("SELECT * FROM guild_config WHERE gid = $1", guild.id)
+        if not table:
+            await self.create_guild_cfg(guild)
+            table = await self.get_guild_cfg(guild)
         else:
             pass
-        guild_portfolio = portfolio
-        return guild_portfolio
+        return table
+
+
+    # Function to update guild app table (set answer and check to None if deleting)
+    async def update_guild_app_table(self, o, guild, question, check):
+        # In reality, question is qid in remove question
+        if o in ["a", "add"]:
+            #ql = await self.client.db.fetch("SELECT app_questions FROM guild_table WHERE gid = $1", self.guild.id)
+            qid = ''.join((secrets.choice(string.ascii_letters + "0123456789") for i in range(64)))
+            await self.client.db.execute("INSERT INTO guild_app_table VALUES ($1, $2, $3, $4)", guild.id, qid, question, check)
+        elif o in ["r", "remove"]:
+            await self.client.db.execute("DELETE FROM guild_app_table WHERE gid = $1 AND qid = $2", guild.id, question)
+
+    # Function to update a user guild table
+    async def update_user_guild(self, user_guild, setting, value):
+        await self.client.db.execute(f"UPDATE user_guild SET {setting}= $1 WHERE gid = $2 AND uid = $3", value, user_guild[0]["gid"],user_guild[0]["uid"])
+    # Same thing for normal user tables
+    async def update_users(self, users, setting, value):
+        await self.client.db.execute(f"UPDATE users SET {setting} = $1 WHERE uid = $2", value, users[0]["uid"])
+    # Function get user table
+    async def get_users(self, user):
+        users = await self.client.db.fetchrow("SELECT * FROM users WHERE uid = $1", user.id)
+        if users is None:
+            await self.create_users(user)
+            users = await self.get_users(user)
+        return users
+
+    # Function to get user guild table
+    async def get_user_guild(self, user, guild):
+        table = await self.client.db.fetchrow("SELECT * FROM user_guild WHERE uid = $1 AND gid = $2", user.id, guild.id)
+        if not table:
+            await self.create_user_guild(user, guild)
+            table = await self.get_user_guild(user, guild)
+        return table
+
+    # Function to get guild table
+    async def get_guild_table(self, guild):
+        table = await self.client.db.fetchrow("SELECT * FROM guild WHERE gid = $1", guild.id)
+        if not table:
+            await self.create_guild_table(guild)
+            table = await self.get_guild_table(guild)
+        else:
+            pass
+        guild_table = table
+        return guild_table
 
     # Gets the Economy Rate
-    async def get_economy_rate(self, guild_portfolio):
-        return int(guild_portfolio[0]["guild_economy_rate"])
+    async def get_economy_rate(self, guild_cfg):
+        return int(guild_cfg["guild_economy_rate"])
 
     # Function to get current user level
-    async def get_curr_level(self, user_portfolio):
-        return int(user_portfolio[0]["level"]) # I think (?) 
+    async def get_curr_level(self, users):
+        return int(users["level"]) # I think (?) 
 
     # Function to get current user points
-    async def get_curr_points(self, user_portfolio):
-        return int(user_portfolio[0]["points"]) # I think (?)
+    async def get_curr_points(self, users):
+        return int(users["points"]) # I think (?)
 
     # Function to get current user guild_level
-    async def get_curr_user_guild_level(self, user_guild_portfolio):
-        return int(user_guild_portfolio[0]["user_guild_level"]) # I think (?)
+    async def get_curr_user_guild_level(self, user_guild):
+        return int(user_guild["user_guild_level"]) # I think (?)
 
     # Function to get current user level
-    async def get_curr_money(self, user_portfolio):
-        return int(user_portfolio[0]["money"]) # I think (?)
+    async def get_curr_money(self, users):
+        return int(users["money"]) # I think (?)
 
     # Function to get current message count
     async def get_curr_msg_count(self, user, guild):
-      user_guild_portfolio = await self.get_user_guild_portfolio(user, guild)
-      return int(user_guild_portfolio[0]["msg_count"])
+        user_guild = await self.get_user_guild(user, guild)
+        print(user_guild)
+        return int(user_guild["msg_count"])
 
-    async def gen_portfolio_embed(self, user, guild=None):
+    async def gen_table_embed(self, user, guild=None):
         avatar = user.avatar_url
-        user_portfolio = await self.get_user_portfolio(user)
+        users = await self.get_users(user)
         if(guild):
-            user_guild_portfolio = await self.get_user_guild_portfolio(user, guild)
-        embed_intro = Embed(title=f"**{str(user)}'s Portfolio's**", color = yellow)
-        embed_up = Embed(title = f"**User Portfolio**", description = f"**Money:** {await self.get_curr_money(user_portfolio)}\n**Points:** {await self.get_curr_points(user_portfolio)}\n**User Level:** {await self.get_curr_level(user_portfolio)}", color = Color.green())
+            user_guild = await self.get_user_guild(user, guild)
+        embed_intro = Embed(title=f"**{str(user)}'s table's**", color = yellow)
+        embed_up = Embed(title = f"**User table**", description = f"**Money:** {await self.get_curr_money(users)}\n**Points:** {await self.get_curr_points(users)}\n**User Level:** {await self.get_curr_level(users)}", color = Color.green())
         if(guild):
-            embed_guild = Embed(title = f"**User Guild Portfolio**", description = f"**User Guild Level:** {await self.get_curr_user_guild_level(user_guild_portfolio)}\n**Message Count:** {await self.get_curr_msg_count(user, guild)}", color=Color.red())
+            embed_guild = Embed(title = f"**User Guild table**", description = f"**User Guild Level:** {await self.get_curr_user_guild_level(user_guild)}\n**Message Count:** {await self.get_curr_msg_count(user, guild)}", color=Color.red())
         else:
             embed_guild = None
         embed_intro.set_thumbnail(url=avatar)
@@ -494,81 +513,81 @@ class Libportfolio():
 class Libeconomy():
     def __init__(self, client):
         self.client = client
-        self.portfolio = Libportfolio(client)
+        self.table = Libtable(client)
 
     # Function to level up a user
     async def level_up(self, user):
-        user_portfolio = await self.portfolio.get_user_portfolio(user)
-        level = await self.portfolio.get_curr_level(user_portfolio) + 1
-        await self.client.db.execute("UPDATE user_portfolio SET level = $1 WHERE uid=$2", (int(level), user.id))
+        users = await self.table.get_users(user)
+        level = await self.table.get_curr_level(users) + 1
+        await self.client.db.execute("UPDATE users SET level = $1 WHERE uid=$2", (int(level), user.id))
 
     # Function to level up a user's guild level
     async def level_up_guild(self, user, guild):
-        user_guild_portfolio = await self.portfolio.get_user_guild_portfolio(user, guild)
-        level = await self.portfolio.get_curr_user_guild_level(user_guild_portfolio) + 1
-        await self.client.db.execute("UPDATE user_guild_portfolio SET user_guild_level = $1 WHERE uid=$2 AND gid = $3", int(level), user.id, guild.id)
+        user_guild = await self.table.get_user_guild(user, guild)
+        level = await self.table.get_curr_user_guild_level(user_guild) + 1
+        await self.client.db.execute("UPDATE user_guild SET user_guild_level = $1 WHERE uid=$2 AND gid = $3", int(level), user.id, guild.id)
 
     # Function to increment users message count by 1
     async def increment_msg_count(self, user, guild):
         # Add to cache
-        port = Libportfolio(self.client)
+        port = Libtable(self.client)
         curr_msg_count = await port.get_curr_msg_count(user, guild)
         await self.set_msg_count(user, guild, curr_msg_count + 1)
 
     # Function to set a new msg count
     async def set_msg_count(self, user, guild, msg_count):
-        await self.client.db.execute("UPDATE user_guild_portfolio SET msg_count = $1 WHERE uid = $2 AND gid = $3", int(msg_count), user.id, guild.id)
+        await self.client.db.execute("UPDATE user_guild SET msg_count = $1 WHERE uid = $2 AND gid = $3", int(msg_count), user.id, guild.id)
 
     # Function to add money to a user
     async def add_money(self, user, amt):
         if(user.bot):
             return
-        user_portfolio = await self.portfolio.get_user_portfolio(user)
-        money = await self.portfolio.get_curr_money(user_portfolio) + amt
-        await self.client.db.execute("UPDATE user_portfolio SET money = $1 WHERE uid = $2", int(money), user.id)
+        users = await self.table.get_users(user)
+        money = await self.table.get_curr_money(users) + amt
+        await self.client.db.execute("UPDATE users SET money = $1 WHERE uid = $2", int(money), user.id)
 
     # Function to remove money from a user
     async def remove_money(self, user, amt):
         if(user.bot):
             return
-        user_portfolio = await self.portfolio.get_user_portfolio(user)
-        money = await self.portfolio.get_curr_money(user_portfolio) - amt
-        await self.client.db.execute("UPDATE user_portfolio SET money = $1 WHERE uid = $2", money, user.id)
+        users = await self.table.get_users(user)
+        money = await self.table.get_curr_money(users) - amt
+        await self.client.db.execute("UPDATE users SET money = $1 WHERE uid = $2", money, user.id)
 
     # Function to remove points from a user
     async def remove_points(self, user, amt):
         if(user.bot):
             return
-        user_portfolio = await self.portfolio.get_user_portfolio(user)
-        points = await self.portfolio.get_curr_points(user_portfolio) - amt
-        await self.client.db.execute("UPDATE user_portfolio SET points = $1 WHERE uid = $2", points, user.id)
+        users = await self.table.get_users(user)
+        points = await self.table.get_curr_points(users) - amt
+        await self.client.db.execute("UPDATE users SET points = $1 WHERE uid = $2", points, user.id)
 
     # Function to add points to a user (with money also added too)
     async def add_points(self, user, amt):
         if(user.bot):
             return
-        user_portfolio = await self.portfolio.get_user_portfolio(user)
-        points = await self.portfolio.get_curr_points(user_portfolio) + amt
+        users = await self.table.get_users(user)
+        points = await self.table.get_curr_points(users) + amt
         money_add = 0
         while(points >= 15):
             money_add += 1
             points -= 15
         await self.add_money(user, money_add)
-        await self.client.db.execute("UPDATE user_portfolio SET points = $1 WHERE uid = $2", int(points), user.id)
+        await self.client.db.execute("UPDATE users SET points = $1 WHERE uid = $2", int(points), user.id)
 
     # Updates the Epoch on the user
     async def update_epoch(self, user, t):
         if(user.bot):
             return
-        await self.client.db.execute(f"UPDATE user_portfolio SET {t} = $1 WHERE uid = $2", time.time(), user.id)
+        await self.client.db.execute(f"UPDATE users SET {t} = $1 WHERE uid = $2", time.time(), user.id)
 
     # Get current epoch of user
-    async def get_epoch(self, user_portfolio, t):
-        return user_portfolio[0][t]
+    async def get_epoch(self, users, t):
+        return users[0][t]
 
 # Login to PostgreSQL
 async def setup_db(pg_user, pg_pwd):
-    db = asyncpg.create_pool(host = "127.0.0.1", port=5432, user=pg_user, password=pg_pwd, database="bear")
+    db = await asyncpg.create_pool(host = "127.0.0.1", port=5432, user=pg_user, password=pg_pwd, database="bear")
     return db
 
 # Change a setting (prefix) etc
@@ -579,12 +598,12 @@ class Libprefix():
         self.miniclient = CatClient(db)
 
     async def set_prefix(self, guild, prefix, cgp=True):
-        r = await self.db.fetch("SELECT * FROM guild_portfolio WHERE gid = $1", guild.id)
+        r = await self.db.fetch("SELECT * FROM guild_table WHERE gid = $1", guild.id)
         if not r:
             if(cgp):
-                port = Libportfolio(self.miniclient)
-                await port.create_guild_portfolio(guild)
-        await self.db.execute("UPDATE guild_portfolio SET prefix = $1 WHERE gid = $2", prefix, guild.id)
+                port = Libtable(self.miniclient)
+                await port.create_guild_table(guild)
+        await self.db.execute("UPDATE guild_table SET prefix = $1 WHERE gid = $2", prefix, guild.id)
         # Get the new prefix
         await self.get_prefix(guild, type = "guild")
         await guild_cache.set_cached_prefix(guild.id, prefix)
@@ -606,7 +625,7 @@ class Libprefix():
             else:
                 return custom_prefixes
 
-            custom_prefixes = await self.db.fetchrow(f"SELECT prefix from guild_portfolio WHERE gid = $1", guild.id)   
+            custom_prefixes = await self.db.fetchrow(f"SELECT prefix from guild_config WHERE gid = $1", guild.id)   
             try:
                 custom_prefixes = custom_prefixes["prefix"]
             except:
@@ -634,35 +653,34 @@ class Libsettings():
     def __init__(self, client):
         self.client = client
         self.db = client.db
-    async def set_setting(self, guild, setting, value, uid=None, portfolio="guild_portfolio", noconv=False):
+    async def set_setting(self, guild, setting, value, uid=None, table="guild_table", noconv=False):
         '''Sets a setting. Takes in the following arguments
             guild - The guild in which to change the setting
             setting - The name of the setting (in the database) that you want to change.
             value - The new value of the setting
         '''
-        # Make sure there is a guild portfolio created
-        r = await self.db.fetch(f"SELECT * FROM {portfolio} WHERE gid = $1", guild.id)
+        # Make sure there is a guild table created
+        r = await self.db.fetch(f"SELECT * FROM {table} WHERE gid = $1", guild.id)
         if not r:
-            port = Libportfolio(self.client)
-            if(portfolio == "user_modmail_portfolio"):
-                await port.create_user_modmail_portfolio(uid, guild.id)
-            await port.create_guild_portfolio(guild)
+            port = Libtable(self.client)
+            if(table == "user_modmail_table"):
+                await port.create_user_modmail_table(uid, guild.id)
+            await port.create_guild_table(guild)
         if(uid == None):
-            r = await self.db.fetch(f"SELECT * FROM {portfolio} WHERE gid = $1", guild.id)
+            r = await self.db.fetch(f"SELECT * FROM {table} WHERE gid = $1", guild.id)
         else:
-            r = await self.db.fetch(f"SELECT {setting} from {portfolio} WHERE gid = $1 AND uid = $2", guild.id, uid)         
+            r = await self.db.fetch(f"SELECT {setting} from {table} WHERE gid = $1 AND uid = $2", guild.id, uid)         
         try:
             if(noconv==False):
                 value = int(value)
         except:
             pass
         if(uid == None):
-            await self.db.execute(f"UPDATE {portfolio} SET {setting}=$1 WHERE gid=$2", value, guild.id)
+            await self.db.execute(f"UPDATE {table} SET {setting}=$1 WHERE gid=$2", value, guild.id)
         else:
-            await self.db.execute(f"UPDATE {portfolio} SET {setting}=$1 WHERE gid=$2 AND uid=$3", value, guild.id, uid)
+            await self.db.execute(f"UPDATE {table} SET {setting}=$1 WHERE gid=$2 AND uid=$3", value, guild.id, uid)
 
-
-    async def get_setting(self, guild, setting, uid=None, portfolio="guild_portfolio"):
+    async def get_setting(self, guild, setting, uid=None, table="guild"):
         if(type(guild) == str):
             try:
                 guild = int(guild)
@@ -673,32 +691,33 @@ class Libsettings():
         else:
             gid = guild.id
         if(uid == None):
-            r = await self.db.fetch(f"SELECT {setting} from {portfolio} WHERE gid = $1", gid)
+            r = await self.db.fetchrow(f"SELECT {setting} from {table} WHERE gid = $1", gid)
         else:
-            r = await self.db.fetch(f"SELECT {setting} from {portfolio} WHERE gid = $1 AND uid = $2", gid, uid)         
+            r = await self.db.fetchrow(f"SELECT {setting} from {table} WHERE gid = $1 AND uid = $2", gid, uid)         
         try:
-            r = r[0][setting]
+            r = r[setting]
         except:
-            if(portfolio == "user_modmail_portfolio"):
+            if(table == "user_modmail"):
                 return ''
             return None
         return r
-    async def del_setting(self, guild, setting, portfolio="guild_portfolio"):
+
+    async def del_setting(self, guild, setting, table="guild"):
         '''Deletes a setting. Takes in the following arguments
             guild - The guild in which to change the setting
             setting - The name of the setting (in the database) that you want to change.
         '''
-        # Make sure there is a guild portfolio created
-        r = await self.db.fetch(f"SELECT * FROM {portfolio} WHERE gid = $1", guild.id)
-        if not r:
-            if(portfolio != "guild_prtfolio"):
+        # Make sure there is a guild table created
+        r = await self.db.fetchrow(f"SELECT gid FROM {table} WHERE gid = $1", guild.id)
+        if r is None:
+            if(table != "guild"):
                 return -1
-            port = Libportfolio(self.client)
-            await port.create_guild_portfolio(guild)
-        r = await self.db.fetch("SELECT * FROM guild_portfolio WHERE gid = $1", guild.id)
-        await self.db.execute(f"UPDATE guild_portfolio SET {setting}=null WHERE gid=$1", guild.id)
-    async def setting_in_use(self, setting, value, portfolio="guild_portfolio"):
-        in_use = await self.db.fetch(f"SELECT * from {portfolio} WHERE {setting} = $1", value)
+            port = Libtable(self.client)
+            await port.create_guild_table(guild)
+        await self.db.execute(f"UPDATE guild_table SET {setting}=null WHERE gid=$1", guild.id)
+
+    async def setting_in_use(self, setting, value, table="guild_table"):
+        in_use = await self.db.fetch(f"SELECT * from {table} WHERE {setting} = $1", value)
         if(in_use == []):
             pass
         else:
@@ -706,18 +725,18 @@ class Libsettings():
             if(in_use.lower() == value.lower()):
                 return 0
         return 1
-    async def get_guild_from_setting(self, setting, value, portfolio="guild_portfolio"):
-        target = await self.db.fetchrow(f"SELECT * FROM {portfolio} WHERE {setting} = $1", value)
+    async def get_guild_from_setting(self, setting, value, table="guild_table"):
+        target = await self.db.fetchrow(f"SELECT * FROM {table} WHERE {setting} = $1", value)
         if target:
             target = target["gid"]
         else:
             target = None
         return target
-    async def append_setting(self, guild, setting, value, uid=None, portfolio="guild_portfolio"):
+    async def append_setting(self, guild, setting, value, uid=None, table="guild_table"):
         # Append another value to a setting
-        old_value = await self.get_setting(guild, setting, uid, portfolio)
+        old_value = await self.get_setting(guild, setting, uid, table)
         new_value = str(old_value) + str(value)
-        await self.set_setting(guild, setting, new_value, uid, portfolio)
+        await self.set_setting(guild, setting, new_value, uid, table)
 
 class Libremove():
     def __init__(self, message, guild, setting, name):

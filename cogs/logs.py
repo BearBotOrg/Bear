@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import asyncio
-from libmeow.libmeow import Libsettings
+from bearlib.corelib import Libsettings
 
 class Logs(commands.Cog):
     def __init__(self, client):

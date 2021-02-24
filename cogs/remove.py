@@ -1,7 +1,7 @@
 import discord
 import random
 from discord.ext import commands
-from libmeow.libmeow import *
+from bearlib.corelib import *
 
 yerllow = 0xFBFC7F
 green = 0x19CC1C

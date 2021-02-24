@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from libmeow.libmeow import Libsettings
+from bearlib.corelib import Libsettings
 yerllow = 0xFBFC7F
 green = 0x19CC1C
 blue = 0x00BFFF

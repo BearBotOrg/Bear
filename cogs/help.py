@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from libmeow.libmeow import Libprefix
+from bearlib.corelib import Libprefix
 from dpymenus import Page, PaginatedMenu
 yellow = 0xFBFC7F
 green = 0x19CC1C
@@ -14,7 +14,7 @@ pink = 0xF32EE2
 class Help(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.p = Libprefix(self.client.pcur)
+        self.p = Libprefix(self.client.db)
 
     @commands.command(pass_context=True)
     async def help(self, ctx):

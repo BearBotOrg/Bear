@@ -1,5 +1,5 @@
 from discord.ext import commands
-from libmeow.libmeow import *
+from bearlib.corelib import *
 class Prefix(commands.Cog):
     def __init__(self, client):
         self.client = client

@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from libmeow.libmeow import Libsettings, Libportfolio, Libshadowmail, Libprefix
+from bearlib.corelib import Libsettings, Libtable, Libshadowmail, Libprefix
 from io import BytesIO
 import time
 
@@ -10,9 +10,9 @@ class ShadowMail(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.settings = Libsettings(client)
-        self.port = Libportfolio(client)
+        self.port = Libtable(client)
         self.modmail = Libshadowmail(client)
-        self.prefix = Libprefix(client.pcur)
+        self.prefix = Libprefix(client.db)
         self.client.state_cache = {}
 
     @commands.Cog.listener()
@@ -114,14 +114,14 @@ class ShadowMail(commands.Cog):
 
     async def do_mmail(self, message, mchannel, user, guild, new=True):
         # Get the old modlog
-        #     async def get_setting(self, guild, setting, uid=None, portfolio="guild_portfolio"):
+        #     async def get_setting(self, guild, setting, uid=None, table="guild_table"):
         if (new):
             await self.settings.append_setting(
                 guild,
                 "mm_logs",
                 f"\nNEW THREAD AT {time.ctime()}\n",
                 uid=int(user.id),
-                portfolio="user_modmail_portfolio")
+                table="user_modmail_table")
         p = await self.prefix.get_prefix(guild, type="guild")
         msgbak = None
         mcn = str(user).lower().replace(
@@ -162,7 +162,7 @@ class ShadowMail(commands.Cog):
                     "mm_logs",
                     f"(THREAD) {str(user)} TO MOD: " + msg.content + "\n",
                     uid=user.id,
-                    portfolio="user_modmail_portfolio")
+                    table="user_modmail_table")
                 msgbak = msg  # Backup old message so we can remove reaction when they send a new message
 
             elif (msg.channel.id == mchannel.id):
@@ -208,7 +208,7 @@ class ShadowMail(commands.Cog):
                     "mm_logs",
                     f"(THREAD) MOD TO {str(user)}: " + msg.content + "\n",
                     uid=user.id,
-                    portfolio="user_modmail_portfolio")
+                    table="user_modmail_table")
 
     @commands.command()
     @commands.has_permissions(kick_members=True)

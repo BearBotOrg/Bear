@@ -12,7 +12,6 @@ import requests
 import secrets
 import string
 from config import ConfigBase, ConfigIntents
-from config.ConfigBase import PG_USER as pg_user, PG_PWD as pg_pwd
 from bearlib.corelib import Libprefix, setup_db, Libcommand, Libsettings
 import uvicorn
 import jishaku
@@ -30,7 +29,9 @@ app = FastAPI()
 @app.on_event("startup")
 async def startup() -> None:
     global db, cache, lp, client
-    db = await setup_db(pg_user, pg_pwd)
+    db = await setup_db(ConfigBase.PG_USER, ConfigBase.PG_PWD)
+    await db.fetch("")
+    print(db)
     lp = Libprefix(db)
     cache = {} # Empty cache initially
     client.command_prefix = lp.bot_get_prefix

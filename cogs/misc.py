@@ -3,7 +3,7 @@ from discord.ext import commands
 import asyncio
 import datetime
 import requests
-from libmeow.libmeow import Libsettings
+from bearlib.corelib import Libsettings
 from captcha.image import ImageCaptcha
 import secrets
 import string
@@ -25,15 +25,10 @@ class Misc(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if(message.guild):
-            purgeverify = await self.settings.get_setting(message.guild, "purgeverify")
-            if(purgeverify != None):
-                channel = message.guild.get_channel(purgeverify)
-                if(channel == None):
-                    return
-                else:
-                    if(message.channel == channel):
-                        await asyncio.sleep(2)
-                        message.channel.purge(limit=2)
+            verifychannel = await self.settings.get_setting(message.guild, "verify_channel", table="guild_config")
+            if verifychannel is not None:
+                vc = client.get_channel(vc)
+                await vc.purge(limit=3)
 
     @commands.command(pass_context=True)
     async def bitcoin(self, ctx):

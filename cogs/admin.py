@@ -4,7 +4,7 @@ from discord.ext import commands
 import asyncio
 import os
 import sys
-from libmeow.libmeow import Libquiz
+from bearlib.corelib import Libquiz
 yerllow = 0xFBFC7F
 green = 0x19CC1C
 blue = 0x00BFFF

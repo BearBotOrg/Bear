@@ -7,7 +7,7 @@ from random import randint
 import datetime
 import sched
 import time
-from libmeow.libmeow import *
+from bearlib.corelib import *
 class Portfolio(commands.Cog):
     def __init__(self, client):
         self.client = client

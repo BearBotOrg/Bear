@@ -4,7 +4,7 @@ from discord.ext import commands
 import asyncio
 import os
 import sys
-from libmeow.libmeow import *
+from bearlib.corelib import *
 yerllow = 0xFBFC7F
 green = 0x19CC1C
 blue = 0x00BFFF
@@ -22,7 +22,7 @@ class Manage(commands.Cog):
         self.ms = {}
         self.memcache = {}
         self.client.state_cache_app = {}
-        self.port = Libportfolio(client)
+        self.port = Libtable(client)
 
     @commands.command()
     @commands.has_guild_permissions(manage_channels=True)
@@ -78,7 +78,7 @@ class Manage(commands.Cog):
         if(self.client.state_cache.get(str(ctx.author.id))):
             pass
         else:
-            up = await self.port.get_user_portfolio(ctx.author)
+            up = await self.port.get_user_table(ctx.author)
             self.client.state_cache[str(ctx.author.id)] = up[0]["mm_state"]
         state = self.client.state_cache[str(ctx.author.id)]
         if(state != 0 and state != None):

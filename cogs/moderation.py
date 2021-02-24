@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import asyncio
-from libmeow.libmeow import Libsettings, Libwarn
+from bearlib.corelib import Libsettings, Libwarn
 blue = 0x00BFFF
 purple = 0x6E33FF
 orange = 0xFEB50E
