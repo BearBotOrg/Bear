@@ -11,7 +11,7 @@ CREATE TABLE users (
 	uid BIGINT NOT NULL, 
 	money FLOAT DEFAULT 0.0, 
 	points INTEGER DEFAULT 0, 
-	level INTEGER DEFAULT 0.0 
+	level INTEGER DEFAULT 0.0,
 	state INTEGER DEFAULT 0, 
 	item_list TEXT[] DEFAULT '{}', 
 	epoch_hourly BIGINT DEFAULT 0, 
@@ -31,7 +31,7 @@ CREATE TABLE user_guild (
 	uid BIGINT NOT NULL, 
 	user_guild_level INTEGER DEFAULT 0, 
 	msg_count BIGINT DEFAULT 0, 
-	warnings TEXT[] DEFAULT "{}"
+	warnings TEXT[] DEFAULT '{}'
 ); -- User Guild
 
 CREATE INDEX user_guild_index ON user_guild (
@@ -57,7 +57,7 @@ CREATE TABLE guild (
 	guild_level INTEGER DEFAULT 0, 
 	guild_money FLOAT DEFAULT 0.0, 
 	guild_points INTEGER DEFAULT 0, 
-	guild_perks TEXT[] DEFAULT "{}", 
+	guild_perks TEXT[] DEFAULT '{}'
 ); -- Guild
 
 CREATE INDEX guild_index ON guild (
@@ -84,7 +84,7 @@ CREATE TABLE guild_config (
         join_log BIGINT, 
 	rolelog BIGINT, 
 	userlog BIGINT,
-	captchaverify BOOLEAN FALSE,
+	verify_mode INTEGER DEFAULT 0, -- 0 = normal, 1 = captcha, 2...
 	staffapp_channel BIGINT,
 	modmail_typeproxy BOOLEAN DEFAULT TRUE,
 	modmail_welcome_message TEXT,
@@ -93,13 +93,13 @@ CREATE TABLE guild_config (
 
 CREATE INDEX guild_config_index ON guild_config (
 	gid,
-	prefix,
+	prefix
 ); -- Guild Configuration Index
 
 CREATE TABLE guild_staff_app (
 	gid BIGINT NOT NULL, 
 	qid TEXT NOT NULL, 
-	question TEXT DEFAULT "", 
+	question TEXT DEFAULT '', 
 	qcheck TEXT
 ); -- Guild Staff Application
 
@@ -108,5 +108,5 @@ CREATE INDEX IF NOT EXISTS guild_staff_app_index ON guild_staff_app (
 ) -- Guild Staff Application Schemea
 
 --       # API Tokens
---    await db.execute("CREATE TABLE IF NOT EXISTS webtokens (uid TEXT NOT NULL, token TEXT, perms INTEGER)")
+--    await db.execute('CREATE TABLE IF NOT EXISTS webtokens (uid TEXT NOT NULL, token TEXT, perms INTEGER)')
 
