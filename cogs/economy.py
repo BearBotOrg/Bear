@@ -11,7 +11,7 @@ class Economy(commands.Cog):
     # 1 Message = 1 Point
     @commands.Cog.listener()
     async def on_message(self, message):
-        if(message.content in ["", " "] or len(message.content) < 5):
+        if message.content in ["", " "] or len(message.content) < 11 or len(message.content) > 512:
             return 
         if(message.guild):
             prefix = Libprefix(self.client.db)
@@ -32,11 +32,15 @@ class Economy(commands.Cog):
             eco_rate = await port.get_economy_rate(await port.get_guild_cfg(message.guild))
             channel = await self.settings.get_setting(message.guild, "lvl_channel", table = "guild_config")
             channel = message.guild.get_channel(channel)
-            if msg_count*5 >= (user_guild_level + 1)**eco_rate:
+            has = msg_count*(eco_rate + 2.7254)
+            needs = (user_guild_level + 0.152)**(1.1253+float(eco_rate)) - len(message.content)*0.53
+            print("User has:", has, "and needs", needs)
+            if has >= needs:
                 await eco.level_up_guild(message.author, message.guild)
                 if channel == None:
-                  channel = message.channel
-                await channel.send("Author: " + str(message.author) + "\nLevel: " + str(user_guild_level + 1) + "\nGuild Economy Rate: " + str(eco_rate) + "\nUser Message Count: " + str(msg_count))
+                    channel = message.channel
+                embed = discord.Embed(title="You Levelled Up!", description = f"<@{message.author.id}> has levelled up to {user_guild_level + 1} and has sent {msg_count} messages!\n\n*The guilds economy rate is {eco_rate}*", color = discord.Color.blurple())
+                await channel.send(f"<@{message.author.id}>", embed = embed)
             return
 
     @commands.command()

@@ -19,7 +19,8 @@ class Remove(commands.Cog):
     @commands.command()
     async def rolestop(self, ctx):
         settings = Libsettings(self.client)
-        await settings.del_setting(ctx.message.guild, "autorole")
+        rc = await settings.del_setting(ctx.message.guild, "auto_roles", table = 'guild_config')
+        print(rc)
         await ctx.message.channel.send(f"Auto Roles for {ctx.message.guild} has been stopped")        
 
     @commands.command()

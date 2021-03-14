@@ -15,6 +15,8 @@ from config import ConfigBase, ConfigIntents
 from bearlib.corelib import Libprefix, setup_db, Libcommand, Libsettings
 import uvicorn
 import jishaku
+from bearlib.help_cmd import BearHelpCommand
+
 
 
 purple = 0x161261
@@ -22,7 +24,8 @@ intents = discord.Intents.default() # Get all intents we can
 intents.members = ConfigIntents.MEMBER_INTENT # Get member intent if we can
 intents.presences = ConfigIntents.PRESENCE_INTENT
 intents.members = True
-client = commands.AutoShardedBot(command_prefix = "$", intents = intents, max_messages=10000) # Initial Client State
+client = commands.AutoShardedBot(command_prefix = ">", intents = intents, max_messages=10000) # Initial Client State
+client.help_command = BearHelpCommand()
 
 app = FastAPI()
 
@@ -37,7 +40,6 @@ async def startup() -> None:
     client.command_prefix = lp.bot_get_prefix
     client.db = db
     client.prefix_cache = {} # The prefix is cached until bot reload
-    client.remove_command('help')
     client.state_cache = {}
     client.state_cache_app = {}
     client.config = ConfigBase
@@ -46,36 +48,6 @@ async def startup() -> None:
         if file.endswith(".py") and not file.startswith("lib"):
             client.load_extension(f"cogs.{file[:-3]}")
     client.load_extension("jishaku")
-
-def commaize(number: int) -> str:
-    text = str(number)
-    parts = text.split(".")
-    ret = ""
-    if len(parts) > 1:
-        ret = "."
-        ret += parts[1] # Apparently commas aren't used to the right of the decimal point. The -1 offsets to len() and 0 are because len() is 1 based but text[] is 0 based
-    for i in range(len(parts[0]) - 1,-1,-1):
-        # We can't just check (i % 3) because we're counting from right to left
-        #  and i is counting from left to right. We can overcome this by checking
-        #  len() - i, although it needs to be adjusted for the off-by-one with a -1
-        # We also make sure we aren't at the far-right (len() - 1) so we don't end
-        #  with a comma
-        if (len(parts[0]) - i - 1) % 3 == 0 and i != len(parts[0]) - 1:
-            ret = "," + ret
-        ret = parts[0][i] + ret
-    return ret
-
-async def cpri(client, channel: discord.TextChannel, data_res: dict, time: str) -> None:
-    if(data_res == "ERR_CONN_REFUSED"):
-        embed = discord.Embed(description = f"__**Coronavirus Tracker for {time}**__\n**Error**\nCould not connect to the server", color = discord.Color.red())
-        embed.set_footer(text = "All coroanvirus data is provided by TheVirusTracker.com")
-        embed.set_thumbnail(url="https://media.discordapp.net/attachments/734701878767648788/745019513728139265/11296192.png")
-    else:
-        embed = discord.Embed(description = f"__**Coronavirus Tracker for {time}**__\n**Total Cases:**: {data_res['total_cases']}\n**Total Recovered:** {data_res['total_recovered']}\n**Total Unresolved**: {data_res['total_unresolved']}\n**Total Deaths:** {data_res['total_deaths']}\n**Total Affected Countries:** {data_res['total_affected_countries']}", color = discord.Color.red())
-        embed.set_footer(text = "All coroanvirus data is provided by TheVirusTracker.com")
-        embed.set_thumbnail(url="https://media.discordapp.net/attachments/734701878767648788/745019513728139265/11296192.png")
-
-    await channel.send(embed=embed)
 
 #@client.event
 async def on_command_error(ctx, error):
@@ -89,50 +61,11 @@ async def on_command_error(ctx, error):
         pass # Oops
     await ctx.message.channel.send(f"**{err[0]}**\n{err[1]}")
 
-covid_up = False # COVID API is down
-
 @client.event
 async def on_ready(pass_context=True):
     print(client.user.name)
     print(client.user.id)
     print('------------------')
-    while(covid_up == True):
-        try:
-            re = requests.get("https://thevirustracker.com/free-api?global=stats",timeout=5)
-            data = re.json()
-            data_res = data['results'][0]
-            for key in data_res:
-                element = data_res[key]
-                if(type(element) == dict):
-                    continue
-                try:
-                    element = commaize(int(element))
-                except:
-                    continue
-            data_res[key] = element
-        except:
-            data_res = "ERR_CONN_REFUSED"
-            await asyncio.sleep(5)
-            continue # Force a wait of one hour to make sure server is up
-        now = datetime.datetime.now()
-        t = now.strftime("%m/%d/%Y, %H:%M:%S")
-        try:
-            for guild in client.guilds:
-                s = Libsettings(client)
-                cchannel = await s.get_setting(guild, "coronachannel") 
-                try:
-                    cchannel = int(cchannel)
-                    do_event = True
-                except:
-                    do_event = False
-                if(do_event):
-                    for channel in guild.text_channels:
-                        if(channel.name == f"{cchannel}" or str(channel.id) == f"{cchannel}"):
-                            await cpri(client, channel, data_res, t)
-            await asyncio.sleep(86400) # Use one hour to prevent ratelimits
-        except:
-            print("client error [corona]. Retrying in one hour")
-            await asyncio.sleep(86400)
 
 async def game_presence():
     while(True):

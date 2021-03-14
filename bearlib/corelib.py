@@ -598,12 +598,12 @@ class Libprefix():
         self.miniclient = CatClient(db)
 
     async def set_prefix(self, guild, prefix, cgp=True):
-        r = await self.db.fetch("SELECT * FROM guild_table WHERE gid = $1", guild.id)
+        r = await self.db.fetchrow("SELECT gid FROM guild_config WHERE gid = $1", guild.id)
         if not r:
             if(cgp):
                 port = Libtable(self.miniclient)
-                await port.create_guild_table(guild)
-        await self.db.execute("UPDATE guild_table SET prefix = $1 WHERE gid = $2", prefix, guild.id)
+                await port.create_guild_cfg(guild)
+        await self.db.execute("UPDATE guild_config SET prefix = $1 WHERE gid = $2", prefix, guild.id)
         # Get the new prefix
         await self.get_prefix(guild, type = "guild")
         await guild_cache.set_cached_prefix(guild.id, prefix)
@@ -626,6 +626,7 @@ class Libprefix():
                 return custom_prefixes
 
             custom_prefixes = await self.db.fetchrow(f"SELECT prefix from guild_config WHERE gid = $1", guild.id)   
+            print(custom_prefixes)
             try:
                 custom_prefixes = custom_prefixes["prefix"]
             except:
@@ -635,7 +636,7 @@ class Libprefix():
             # Set custom_prefixes in cache
             await guild_cache.set_cached_prefix(guild.id, custom_prefixes)
             return custom_prefixes
-        return "$" # Not in guild, use default $
+        return ">" # Not in guild, use default >
 
     # Same as get_prefix, but for initial bot setup
     async def bot_get_prefix(self, bot, message):
@@ -653,7 +654,7 @@ class Libsettings():
     def __init__(self, client):
         self.client = client
         self.db = client.db
-    async def set_setting(self, guild, setting, value, uid=None, table="guild_table", noconv=False):
+    async def set_setting(self, guild, setting, value, uid=None, table="guild_config", noconv=False):
         '''Sets a setting. Takes in the following arguments
             guild - The guild in which to change the setting
             setting - The name of the setting (in the database) that you want to change.
@@ -707,24 +708,25 @@ class Libsettings():
             guild - The guild in which to change the setting
             setting - The name of the setting (in the database) that you want to change.
         '''
-        # Make sure there is a guild table created
+        # Make sure there is a table
         r = await self.db.fetchrow(f"SELECT gid FROM {table} WHERE gid = $1", guild.id)
         if r is None:
             if(table != "guild"):
                 return -1
             port = Libtable(self.client)
             await port.create_guild_table(guild)
-        await self.db.execute(f"UPDATE guild_table SET {setting}=null WHERE gid=$1", guild.id)
+        await self.db.execute(f"UPDATE {table} SET {setting}=null WHERE gid=$1", guild.id)
 
     async def setting_in_use(self, setting, value, table="guild_table"):
-        in_use = await self.db.fetch(f"SELECT * from {table} WHERE {setting} = $1", value)
-        if(in_use == []):
+        in_use = await self.db.fetchrow(f"SELECT {setting} from {table} WHERE {setting} = $1", value)
+        if in_use is None:
             pass
         else:
-            in_use = in_use[0][setting]
+            in_use = in_use[setting]
             if(in_use.lower() == value.lower()):
                 return 0
         return 1
+
     async def get_guild_from_setting(self, setting, value, table="guild_table"):
         target = await self.db.fetchrow(f"SELECT * FROM {table} WHERE {setting} = $1", value)
         if target:

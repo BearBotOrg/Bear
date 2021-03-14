@@ -12,7 +12,7 @@ class Prefix(commands.Cog):
         else:
             await message.send("You can only set prefix in a server.")
             return
-        lprefix = Libprefix(self.client.pcur) # Create a Libprefix object
+        lprefix = Libprefix(self.client.db) # Create a Libprefix object
         await lprefix.set_prefix(guild, prefix)
         await message.send(f"**Successfully addded prefix for {guild}**\nNew Prefix: {prefix}")
         self.client.command_prefix = lprefix.bot_get_prefix

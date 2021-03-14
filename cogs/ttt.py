@@ -8,7 +8,7 @@ import yaml
 with open('config.yaml') as config_file:
     config = yaml.load(config_file, Loader=yaml.FullLoader)
 
-class TicTacToe_:
+class TicTacToe():
     def __init__(self):
         # Emotes Section
         self.white_page = config['white_page']
@@ -98,7 +98,7 @@ class TicTacToe_:
         return winner
 
 
-class TicTacToeBot(commands.Cog):
+class TicTacToe(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -230,4 +230,4 @@ class TicTacToeBot(commands.Cog):
             return
 
 def setup(bot):
-    bot.add_cog(TicTacToeBot(bot))
+    bot.add_cog(TicTacToe(bot))
